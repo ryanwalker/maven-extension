@@ -33,7 +33,7 @@ import org.apache.maven.project.MavenProject;
  * @goal touch
  * @phase process-sources
  */
-@Mojo(name = "dependency-counter", defaultPhase = LifecyclePhase.COMPILE)
+@Mojo(name = "dependency-counter", inheritByDefault = false, aggregator = true)
 public class DependencyCounterMojo extends AbstractMojo {
 
   // TODO - figure out java8, 11, 17???

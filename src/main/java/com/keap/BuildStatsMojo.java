@@ -1,7 +1,11 @@
 package com.keap;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.cloud.pubsub.v1.Publisher;
 import com.google.common.collect.ImmutableMap;
+import com.google.protobuf.ByteString;
+import com.google.pubsub.v1.ProjectTopicName;
+import com.google.pubsub.v1.PubsubMessage;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
@@ -10,7 +14,7 @@ import org.apache.maven.plugin.AbstractMojo;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugins.annotations.Mojo;
 
-@Mojo(name = "build-stats")
+@Mojo(name = "build-stats", aggregator = true, inheritByDefault = false)
 public class BuildStatsMojo extends AbstractMojo {
 
   public void execute() throws MojoExecutionException {
@@ -50,7 +54,7 @@ public class BuildStatsMojo extends AbstractMojo {
     Process machine = runtime.exec("uname -m");
     Process processor = runtime.exec("uname -p");
     Process os = runtime.exec("uname -o");
-    
+
     system.waitFor();
     nodeName.waitFor();
     release.waitFor();
@@ -70,15 +74,31 @@ public class BuildStatsMojo extends AbstractMojo {
     Map<String, String> values = ImmutableMap.<String, String>builder()
         .put("system", systemValue)
         .put("nodeName", nodeNameValue)
-        .put("release", releaseValue )
+        .put("release", releaseValue)
         .put("version", versionValue)
         .put("machine", machineValue)
         .put("processor", processorValue)
         .put("os", osValue)
         .build();
 
-    return new ObjectMapper().writeValueAsString(values);
+
+    String json = new ObjectMapper().writeValueAsString(values);
+    publishToGooglePubSub(json);
+    return json;
   }
+
+
+  private void publishToGooglePubSub(String json) throws IOException {
+    ProjectTopicName topic = ProjectTopicName.of("keap-core-build-aggregation", "buildTimes");
+    Publisher publisher = Publisher.newBuilder(topic).build();
+
+    PubsubMessage message = PubsubMessage.newBuilder()
+        .setData(ByteString.copyFromUtf8(json))
+        .build();
+    publisher.publish(message);
+    getLog().error("I JUST PUBLISHED: " + message.getData());
+  }
+
 
   private static String getCommandValue(Process process) throws IOException {
     try (BufferedReader br = new BufferedReader(

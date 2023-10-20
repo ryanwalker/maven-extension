@@ -8,7 +8,7 @@ import org.apache.maven.execution.MavenSession;
 import org.apache.maven.execution.ProjectDependencyGraph;
 import org.apache.maven.project.MavenProject;
 
-  @Mojo(name = "report-summary")
+  @Mojo(name = "report-summary", inheritByDefault = false, aggregator = true)
   public class BuildStatsFailMojo extends AbstractMojo {
     @Parameter(defaultValue = "${session}")
     private MavenSession session;
