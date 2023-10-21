@@ -35,7 +35,8 @@
     <dependency>
       <groupId>org.apache.maven</groupId>
       <artifactId>maven-core</artifactId>
-      <version>3.3.9</version>
+      <version>3.9.5</version>
+      <scope>provided</scope>
     </dependency>
     <dependency>
       <groupId>org.apache.maven</groupId>
@@ -64,21 +65,61 @@
       <version>2.15.3</version>
     </dependency>
 
+    <dependency>
+      <groupId>org.slf4j</groupId>
+      <artifactId>slf4j-nop</artifactId>
+      <version>1.7.5</version>
+      <scope>test</scope>
+    </dependency>
+
+    <dependency>
+      <groupId>org.slf4j</groupId>
+      <artifactId>slf4j-api</artifactId>
+      <version>1.7.5</version>
+      <scope>provided</scope>
+    </dependency>
+
+
   </dependencies>
 
   <build>
     <plugins>
+<!--      <plugin>-->
+<!--        <groupId>no.sparebank1</groupId>-->
+<!--        <artifactId>turbo-maven-plugin</artifactId>-->
+<!--        <version>1.0.0</version>-->
+<!--        <extensions>false</extensions>-->
+<!--        <configuration>-->
+<!--          <enabled>true</enabled>-->
+<!--          <ignoreChangesInFiles>swagger.json</ignoreChangesInFiles>-->
+<!--          <alwaysBuildModules>distribution</alwaysBuildModules>-->
+<!--        </configuration>-->
+<!--      </plugin>-->
+
       <plugin>
-        <groupId>no.sparebank1</groupId>
-        <artifactId>turbo-maven-plugin</artifactId>
-        <version>1.0.0</version>
-        <extensions>false</extensions>
-        <configuration>
-          <enabled>true</enabled>
-          <ignoreChangesInFiles>swagger.json</ignoreChangesInFiles>
-          <alwaysBuildModules>distribution</alwaysBuildModules>
-        </configuration>
+        <groupId>org.sonatype.plugins</groupId>
+        <artifactId>sisu-maven-plugin</artifactId>
+        <version>1.1</version>
+        <executions>
+          <execution>
+            <id>generate-index</id>
+            <goals>
+              <goal>main-index</goal>
+            </goals>
+          </execution>
+        </executions>
       </plugin>
+
+      <plugin>
+        <groupId>com.baeldung</groupId>
+        <artifactId>counter-maven-plugin</artifactId>
+        <version>0.0.1-SNAPSHOT</version>
+        <extensions>true</extensions>
+<!--        <configuration>-->
+<!--          ...-->
+<!--        </configuration>-->
+      </plugin>
+      
     </plugins>
     <pluginManagement>
       <plugins>

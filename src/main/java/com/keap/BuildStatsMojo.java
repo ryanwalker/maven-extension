@@ -1,15 +1,19 @@
 package com.keap;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.api.core.ApiFuture;
 import com.google.cloud.pubsub.v1.Publisher;
 import com.google.common.collect.ImmutableMap;
 import com.google.protobuf.ByteString;
-import com.google.pubsub.v1.ProjectTopicName;
 import com.google.pubsub.v1.PubsubMessage;
+import com.google.pubsub.v1.TopicName;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.time.Instant;
+import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.ExecutionException;
 import org.apache.maven.plugin.AbstractMojo;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugins.annotations.Mojo;
@@ -28,7 +32,8 @@ public class BuildStatsMojo extends AbstractMojo {
     try {
       getLog().error(userHardwareJson());
     } catch (Exception e) {
-      getLog().error("Unable to run `uname -a`");
+      throw new RuntimeException(e);
+//      getLog().error("Unable to run `uname -a`");
     }
   }
 
@@ -71,7 +76,7 @@ public class BuildStatsMojo extends AbstractMojo {
     String processorValue = getCommandValue(processor);
     String osValue = getCommandValue(os);
 
-    Map<String, String> values = ImmutableMap.<String, String>builder()
+    Map<String, String> hardware = ImmutableMap.<String, String>builder()
         .put("system", systemValue)
         .put("nodeName", nodeNameValue)
         .put("release", releaseValue)
@@ -81,22 +86,31 @@ public class BuildStatsMojo extends AbstractMojo {
         .put("os", osValue)
         .build();
 
+    Map<String, Object> payload = new HashMap<>();
 
-    String json = new ObjectMapper().writeValueAsString(values);
+    payload.put("hardware", hardware);
+    payload.put("timestamp", Instant.now().getEpochSecond());
+
+    String json = new ObjectMapper().writeValueAsString(payload);
     publishToGooglePubSub(json);
     return json;
   }
 
 
-  private void publishToGooglePubSub(String json) throws IOException {
-    ProjectTopicName topic = ProjectTopicName.of("keap-core-build-aggregation", "buildTimes");
-    Publisher publisher = Publisher.newBuilder(topic).build();
+  private void publishToGooglePubSub(String json)
+      throws IOException, ExecutionException, InterruptedException {
+    String projectId = "keap-core-build-aggregation";
+    String topicId = "buildTimes";
+    TopicName topicName = TopicName.of(projectId, topicId);
+    Publisher publisher = Publisher.newBuilder(topicName).build();
 
     PubsubMessage message = PubsubMessage.newBuilder()
         .setData(ByteString.copyFromUtf8(json))
         .build();
-    publisher.publish(message);
-    getLog().error("I JUST PUBLISHED: " + message.getData());
+    ApiFuture<String> future = publisher.publish(message);
+    getLog().error("get the published id");
+    String someId = future.get();
+    getLog().error(String.format("I JUST PUBLISHED message %s,: %s", someId, message.getData()));
   }
 
 
